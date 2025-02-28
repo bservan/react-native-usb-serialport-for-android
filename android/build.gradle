@@ -19,10 +19,10 @@ def safeExtGet(prop, fallback) {
 }
 
 android {
-    compileSdkVersion safeExtGet('UsbSerialportForAndroid_compileSdkVersion', 30)
+    compileSdkVersion safeExtGet('UsbSerialportForAndroid_compileSdkVersion', 34)
     defaultConfig {
         minSdkVersion safeExtGet('UsbSerialportForAndroid_minSdkVersion', 16)
-        targetSdkVersion safeExtGet('UsbSerialportForAndroid_targetSdkVersion', 30)
+        targetSdkVersion safeExtGet('UsbSerialportForAndroid_targetSdkVersion', 34)
         versionCode 1
         versionName "1.0"
 
