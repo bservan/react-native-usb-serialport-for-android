@@ -43,6 +43,7 @@
   },
   "homepage": "https://github.com/bservan/react-native-usb-serialport-for-android#readme",
   "publishConfig": {
+    "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
   "devDependencies": {
