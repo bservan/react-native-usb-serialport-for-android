@@ -5,13 +5,13 @@ React Native USB serialport module for Android platform based on [mik3y/usb-seri
 ## Installation
 
 ```sh
-npm install react-native-usb-serialport-for-android --save
+npm install @bservan/react-native-usb-serialport-for-android --save
 ```
 
 ## Usage
 
 ```js
-import { UsbSerialManager, Parity, Codes } from "react-native-usb-serialport-for-android";
+import { UsbSerialManager, Parity, Codes } from "@bservan/react-native-usb-serialport-for-android";
 
 // ...
 const devices = await UsbSerialManager.list();
