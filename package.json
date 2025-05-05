@@ -18,7 +18,8 @@
     "!**/__fixtures__",
     "!**/__mocks__",
     "!**/.idea",
-    "!**/.gradle"
+    "!**/.gradle",
+    "!android/local.properties"
   ],
   "scripts": {
     "test": "jest",
