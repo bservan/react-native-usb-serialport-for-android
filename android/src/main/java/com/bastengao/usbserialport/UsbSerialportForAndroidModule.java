@@ -6,10 +6,12 @@ import android.content.Intent;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 
 import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
@@ -23,11 +25,12 @@ import com.hoho.android.usbserial.driver.UsbSerialPort;
 import com.hoho.android.usbserial.driver.UsbSerialProber;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 @ReactModule(name = UsbSerialportForAndroidModule.NAME)
-public class UsbSerialportForAndroidModule extends ReactContextBaseJavaModule implements EventSender {
+public class UsbSerialportForAndroidModule extends ReactContextBaseJavaModule implements EventSender, LifecycleEventListener {
     public static final String NAME = "UsbSerialportForAndroid";
     private static final String INTENT_ACTION_GRANT_USB = BuildConfig.LIBRARY_PACKAGE_NAME + ".GRANT_USB";
 
@@ -42,10 +45,15 @@ public class UsbSerialportForAndroidModule extends ReactContextBaseJavaModule im
 
     private final ReactApplicationContext reactContext;
     private final Map<Integer, UsbSerialPortWrapper> usbSerialPorts = new HashMap<Integer, UsbSerialPortWrapper>();
+    private final Map<Integer, UsbSerialPortParameters> usbSerialPortParameters = new HashMap<>();
 
     public UsbSerialportForAndroidModule(ReactApplicationContext reactContext) {
         super(reactContext);
         this.reactContext = reactContext;
+
+        if (BuildConfig.LIFECYCLE_AWARE_USB_MODULE_ENABLED) {
+            reactContext.addLifecycleEventListener(this);
+        }
     }
 
     @Override
@@ -194,6 +202,12 @@ public class UsbSerialportForAndroidModule extends ReactContextBaseJavaModule im
 
         wrapper.close();
         usbSerialPorts.remove(deviceId);
+
+        UsbSerialPortParameters params = usbSerialPortParameters.get(deviceId);
+        if (params != null) {
+            usbSerialPortParameters.remove(deviceId);
+        }
+
         promise.resolve(null);
     }
 
@@ -238,5 +252,93 @@ public class UsbSerialportForAndroidModule extends ReactContextBaseJavaModule im
             hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
         }
         return new String(hexChars);
+    }
+
+    @Override
+    public void onHostResume() {
+        if (BuildConfig.LIFECYCLE_AWARE_USB_MODULE_ENABLED) {
+            for (Integer deviceId : usbSerialPorts.keySet()) {
+                try {
+                    UsbManager usbManager = (UsbManager) getCurrentActivity().getSystemService(Context.USB_SERVICE);
+                    UsbDevice dev = findDevice(deviceId);
+                    if (dev == null) {
+                        Log.e(NAME, "device not found" + CODE_DEVICE_NOT_FOND);
+                        continue;
+                    }
+
+                    UsbSerialDriver driver = UsbSerialProber.getDefaultProber().probeDevice(dev);
+                    if (driver == null) {
+                        Log.e(NAME, "no driver for device" + CODE_DRIVER_NOT_FOND);
+                        continue;
+                    }
+                    if (driver.getPorts().size() < 0) {
+                        Log.e(NAME, "not enough ports at device" + CODE_NOT_ENOUGH_PORTS);
+                        continue;
+                    }
+
+                    UsbDeviceConnection connection = usbManager.openDevice(driver.getDevice());
+                    if(connection == null) {
+                        if (!usbManager.hasPermission(driver.getDevice())) {
+                            Log.e(NAME, "connection failed: permission denied");
+                        } else {
+                            Log.e(NAME, "connection failed: open failed");
+                        }
+                        continue;
+                    }
+
+                    UsbSerialPort port = driver.getPorts().get(0);
+                    try {
+                        port.open(connection);
+                        UsbSerialPortParameters params = usbSerialPortParameters.get(deviceId);
+                        if (params != null) {
+                            port.setParameters(params.baudRate, params.dataBits, params.stopBits, params.parity);
+                        }
+                    } catch (IOException e) {
+                        try {
+                            port.close();
+                        } catch (IOException ignored) {}
+                        Log.e(NAME, "connection failed", e);
+                        continue;
+                    }
+
+                    UsbSerialPortWrapper wrapper = new UsbSerialPortWrapper(deviceId, port, this);
+                    usbSerialPorts.put(deviceId, wrapper);
+                } catch (Exception e) {
+                    Log.e(NAME, "Exception on closing device in onHostResume:" + e.getMessage());
+                }
+            }
+        }
+    }
+
+    @Override
+    public void onHostPause() {
+        if (BuildConfig.LIFECYCLE_AWARE_USB_MODULE_ENABLED) {
+            Collection<UsbSerialPortWrapper> devices = usbSerialPorts.values();
+            for (UsbSerialPortWrapper device : devices) {
+                try {
+                    device.close();
+                } catch (Exception e) {
+                    Log.e(NAME, "Exception on closing device in onHostPause:" + e.getMessage());
+                }
+            }
+        }
+    }
+
+    @Override
+    public void onHostDestroy() {
+        if (BuildConfig.LIFECYCLE_AWARE_USB_MODULE_ENABLED) {
+            Collection<UsbSerialPortWrapper> devices = usbSerialPorts.values();
+
+            for (UsbSerialPortWrapper device : devices) {
+                try {
+                    device.close();
+                } catch (Exception e) {
+                    Log.e(NAME, "Exception on closing device in onHostDestroy:" + e.getMessage());
+                }
+            }
+
+            usbSerialPorts.clear();
+            usbSerialPortParameters.clear();
+        }
     }
 }
