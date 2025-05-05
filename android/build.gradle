@@ -26,6 +26,11 @@ android {
         versionCode 1
         versionName "1.0"
 
+        def lifecycleAwareUsbModuleEnabled = project.hasProperty("LIFECYCLE_AWARE_USB_MODULE_ENABLED")
+                ? project.property("LIFECYCLE_AWARE_USB_MODULE_ENABLED")
+                : "false"
+
+        buildConfigField "boolean", "LIFECYCLE_AWARE_USB_MODULE_ENABLED", "${lifecycleAwareUsbModuleEnabled}"
     }
 
     buildTypes {

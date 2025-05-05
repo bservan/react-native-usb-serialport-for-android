@@ -1,4 +1,4 @@
-# react-native-usb-serialport-for-android
+# @bservan/react-native-usb-serialport-for-android
 
 React Native USB serialport module for Android platform based on [mik3y/usb-serial-for-android](https://github.com/mik3y/usb-serial-for-android)
 
@@ -38,6 +38,10 @@ try {
 ```
 
 See [documentation](https://bastengao.com/react-native-usb-serialport-for-android/) for details.
+
+## Lifecycle-aware support
+
+Starting with 0.6.0, lifecycle-awareness is integrated into the module. By default, this feature is not enabled. To enable it, set LIFECYCLE_AWARE_USB_MODULE_ENABLED to true in your application's properties. Easiest way to do this is by adding LIFECYCLE_AWARE_USB_MODULE_ENABLED=true to gradle.properties.
 
 ## Contributing
 

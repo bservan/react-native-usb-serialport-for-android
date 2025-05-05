@@ -1,6 +1,6 @@
 {
   "name": "@bservan/react-native-usb-serialport-for-android",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "USB serial port package for React Native. Android only.",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
