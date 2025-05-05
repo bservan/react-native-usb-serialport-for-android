@@ -16,7 +16,9 @@
     "!android/build",
     "!**/__tests__",
     "!**/__fixtures__",
-    "!**/__mocks__"
+    "!**/__mocks__",
+    "!**/.idea",
+    "!**/.gradle"
   ],
   "scripts": {
     "test": "jest",
